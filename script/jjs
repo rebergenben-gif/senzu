@@ -1,3 +1,10 @@
+// Voeg een logo bovenaan de site toe
+window.addEventListener("DOMContentLoaded", () => {
+  const header = document.createElement("header");
+  header.innerHTML = `<h1 class="site-logo">🛍️ Onze Shop</h1>`;
+  document.body.prepend(header);
+});
+
 // ELEMENTS
 const container = document.getElementById("producten");
 const detailContainer = document.getElementById("productDetail");
