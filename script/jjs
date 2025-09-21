@@ -1,0 +1,194 @@
+// ELEMENTS
+const container = document.getElementById("producten");
+const detailContainer = document.getElementById("productDetail");
+const mandjeLijst = document.getElementById("mandjeLijst");
+const totaalPrijsElement = document.getElementById("totaalPrijs");
+const leegMandjeBtn = document.getElementById("leegMandjeBtn");
+const toevoegBtn = document.getElementById("toevoegBtn");
+
+// VOORAF INGESTELDE PRODUCTEN (alleen als localStorage leeg is)
+const standaardProducten = [
+  { naam: "Sneakers", prijs: 50, verkoper: "Jij", beschrijving: "Comfortabele sneakers, maat 42.", foto: "images/sneakers.jpg" },
+  { naam: "Hoodie", prijs: 30, verkoper: "Vriend", beschrijving: "Warme hoodie, ideaal voor de winter.", foto: "images/hoodie.jpg" }
+];
+
+// HAAL OP/INIT
+let producten = JSON.parse(localStorage.getItem("producten")) || standaardProducten.slice();
+let mandje = JSON.parse(localStorage.getItem("mandje")) || [];
+
+// SAVE FUNCTIES
+function saveProducten() {
+  localStorage.setItem("producten", JSON.stringify(producten));
+}
+function saveMandje() {
+  localStorage.setItem("mandje", JSON.stringify(mandje));
+}
+
+// WEERGAVE: producten
+function toonProducten() {
+  container.innerHTML = "";
+  detailContainer.style.display = "none";
+  container.style.display = "flex";
+
+  if (producten.length === 0) {
+    container.innerHTML = "<p>Geen producten beschikbaar.</p>";
+    return;
+  }
+
+  producten.forEach((p, index) => {
+    const kaart = document.createElement("div");
+    kaart.className = "product";
+    kaart.innerHTML = `
+      <img src="${p.foto}" alt="${escapeHtml(p.naam)}">
+      <h3>${escapeHtml(p.naam)}</h3>
+      <p class="price">Prijs: €${Number(p.prijs).toFixed(2)}</p>
+      <p class="seller">Verkoper: ${escapeHtml(p.verkoper)}</p>
+      <div class="card-actions">
+        <button onclick="bekijkProduct(${index})">Bekijk details</button>
+        <button onclick="voegAanMandjeToe(${index})">➕ In winkelmandje</button>
+        <button class="verwijder" onclick="verwijderProduct(${index})">❌ Verwijder</button>
+      </div>
+    `;
+    container.appendChild(kaart);
+  });
+}
+
+// DETAIL WEERGAVE
+function bekijkProduct(index) {
+  const p = producten[index];
+  container.style.display = "none";
+  detailContainer.style.display = "block";
+  detailContainer.innerHTML = `
+    <div class="detail card">
+      <img src="${p.foto}" alt="${escapeHtml(p.naam)}">
+      <h2>${escapeHtml(p.naam)}</h2>
+      <p><strong>Prijs:</strong> €${Number(p.prijs).toFixed(2)}</p>
+      <p><strong>Verkoper:</strong> ${escapeHtml(p.verkoper)}</p>
+      <p><strong>Beschrijving:</strong><br>${escapeHtml(p.beschrijving)}</p>
+      <div class="card-actions">
+        <button onclick="voegAanMandjeToe(${index})">➕ In winkelmandje</button>
+        <button onclick="toonProducten()">⬅ Terug</button>
+      </div>
+    </div>
+  `;
+}
+
+// PRODUCT TOEVOEGEN (met foto upload -> base64)
+function voegProductToe() {
+  const naam = document.getElementById("naam").value.trim();
+  const prijsVal = document.getElementById("prijs").value.trim();
+  const prijs = parseFloat(prijsVal.replace(",", "."));
+  const verkoper = document.getElementById("verkoper").value.trim();
+  const beschrijving = document.getElementById("beschrijving").value.trim();
+  const fotoInput = document.getElementById("foto");
+
+  if (!naam || isNaN(prijs) || !verkoper || !beschrijving || !fotoInput.files[0]) {
+    alert("Vul alle velden correct in en kies een foto!");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const nieuwProduct = { naam, prijs, verkoper, beschrijving, foto: e.target.result };
+    producten.push(nieuwProduct);
+    saveProducten();
+    toonProducten();
+    // reset velden
+    document.getElementById("naam").value = "";
+    document.getElementById("prijs").value = "";
+    document.getElementById("verkoper").value = "";
+    document.getElementById("beschrijving").value = "";
+    fotoInput.value = "";
+  };
+  reader.readAsDataURL(fotoInput.files[0]);
+}
+
+// VERWIJDER PRODUCT
+function verwijderProduct(index) {
+  if (!confirm("Weet je zeker dat je dit product wilt verwijderen?")) return;
+  producten.splice(index, 1);
+  saveProducten();
+  toonProducten();
+}
+
+// MANDJE FUNCTIES
+function voegAanMandjeToe(index) {
+  // Kopieer het product (zodat latere wijzigingen productlist niet direct mandje beïnvloeden)
+  const item = Object.assign({}, producten[index]);
+  mandje.push(item);
+  saveMandje();
+  toonMandje();
+  alert(`${item.naam} is toegevoegd aan je winkelmandje.`);
+}
+
+function verwijderUitMandje(index) {
+  mandje.splice(index, 1);
+  saveMandje();
+  toonMandje();
+}
+
+function leegMandje() {
+  if (!confirm("Weet je zeker dat je je hele mandje wilt leegmaken?")) return;
+  mandje = [];
+  saveMandje();
+  toonMandje();
+}
+
+// TOON MANDJE
+function toonMandje() {
+  mandjeLijst.innerHTML = "";
+  let totaal = 0;
+
+  if (mandje.length === 0) {
+    mandjeLijst.innerHTML = "<li>Je mandje is leeg.</li>";
+    totaalPrijsElement.textContent = "";
+    return;
+  }
+
+  mandje.forEach((p, index) => {
+    totaal += Number(p.prijs);
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <img src="${p.foto}" alt="${escapeHtml(p.naam)}" class="mini">
+      <span class="name">${escapeHtml(p.naam)}</span>
+      <span class="price">€${Number(p.prijs).toFixed(2)}</span>
+      <button class="mini-remove" onclick="verwijderUitMandje(${index})">❌</button>
+    `;
+    mandjeLijst.appendChild(li);
+  });
+
+  totaalPrijsElement.innerHTML = `Totaal: €${totaal.toFixed(2)}<br><a class="checkout-link" href="checkout.html">➡ Naar afrekenen</a>`;
+}
+
+// KOOP (placeholder)
+function koop(productNaam) {
+  alert(`Je hebt ${productNaam} gekozen! Neem contact op met de verkoper om op te halen.`);
+}
+
+// HULPFUNCTIES
+function escapeHtml(text) {
+  if (!text && text !== 0) return "";
+  return String(text)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+// EVENT LISTENERS
+toevoegBtn.addEventListener("click", voegProductToe);
+leegMandjeBtn.addEventListener("click", leegMandje);
+
+// START
+toonProducten();
+toonMandje();
+
+// Expose sommige functies naar global scope voor inline onclick in HTML
+window.bekijkProduct = bekijkProduct;
+window.voegAanMandjeToe = voegAanMandjeToe;
+window.verwijderProduct = verwijderProduct;
+window.verwijderUitMandje = verwijderUitMandje;
+window.leegMandje = leegMandje;
+window.toonProducten = toonProducten;
+window.koop = koop;
