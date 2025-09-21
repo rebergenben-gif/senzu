@@ -1,3 +1,11 @@
+.site-logo {
+  font-size: 2em;
+  color: #27ae60;
+  text-align: center;
+  margin: 20px 0;
+  font-weight: bold;
+}
+
 :root{
   --accent:#27ae60;
   --danger:#e74c3c;
