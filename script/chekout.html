@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Afrekenen - Onze Verkoopsite</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header><h1>🛒 Afrekenen</h1></header>
+
+  <main style="max-width:800px;margin:20px auto;padding:0 16px;">
+    <p>Hier zie je de producten in je winkelmandje:</p>
+    <div id="checkout" class="card"></div>
+    <p id="checkoutTotaal" style="font-weight:600;"></p>
+
+    <div style="margin-top:12px;">
+      <button id="plaatsBestellingBtn">✅ Bestelling klaarzetten voor ophalen</button>
+      <button onclick="window.location.href='index.html'">⬅ Terug naar winkel</button>
+    </div>
+  </main>
+
+  <script>
+    // Laad mandje uit localStorage
+    let mandje = JSON.parse(localStorage.getItem("mandje")) || [];
+    const checkoutDiv = document.getElementById("checkout");
+    const totaalEl = document.getElementById("checkoutTotaal");
+    const plaatsBestellingBtn = document.getElementById("plaatsBestellingBtn");
+
+    function toonCheckout() {
+      checkoutDiv.innerHTML = "";
+      let totaal = 0;
+
+      if (mandje.length === 0) {
+        checkoutDiv.innerHTML = "<p>Je winkelmandje is leeg.</p>";
+        totaalEl.textContent = "";
+        plaatsBestellingBtn.disabled = true;
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      ul.style.listStyle = "none";
+      ul.style.padding = "0";
+
+      mandje.forEach((p) => {
+        totaal += Number(p.prijs);
+        const li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.alignItems = "center";
+        li.style.gap = "10px";
+        li.style.margin = "8px 0";
+        li.innerHTML = `
+          <img src="${p.foto}" alt="${p.naam}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;">
+          <div>
+            <div style="font-weight:600;">${p.naam}</div>
+            <div style="color:#666;">€${Number(p.prijs).toFixed(2)}</div>
+          </div>
+        `;
+        ul.appendChild(li);
+      });
+
+      checkoutDiv.appendChild(ul);
+      totaalEl.textContent = `Totaal: €${totaal.toFixed(2)}`;
+      plaatsBestellingBtn.disabled = false;
+    }
+
+    function plaatsBestelling() {
+      if (mandje.length === 0) {
+        alert("Je winkelmandje is leeg!");
+        return;
+      }
+      // Leeg mandje en redirect naar bedankt
+      mandje = [];
+      localStorage.setItem("mandje", JSON.stringify(mandje));
+      window.location.href = "bedankt.html";
+    }
+
+    plaatsBestellingBtn.addEventListener("click", plaatsBestelling);
+    toonCheckout();
+  </script>
+</body>
+</html>
